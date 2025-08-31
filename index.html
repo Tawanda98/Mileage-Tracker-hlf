@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mileage Tracker</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTWlsZWFnZSBUcmFja2VyIiwic2hvcnRfbmFtZSI6Ik1pbGVhZ2UiLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwidGhlbWVfY29sb3IiOiIjMWUzYThhIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmYWZhZmEifQ==">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fafafa; color: #1e293b; line-height: 1.6; padding-bottom: 80px; }
+        
+        /* New Color Scheme */
+        .header { background: linear-gradient(135deg, #1e3a8a, #1e40af); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(30, 58, 138, 0.3); position: sticky; top: 0; z-index: 100; }
+        .header h1 { font-size: 24px; font-weight: 600; }
+        
+        .container { max-width: 100%; margin: 0 auto; padding: 20px; }
+        .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        
+        .quick-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .stat-item { text-align: center; padding: 20px; background: linear-gradient(135deg, #fefce8, #fef9c3); border-radius: 12px; border: 1px solid #fef08a; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #854d0e; } /* Maroon/Dark Yellow */
+        .stat-label { font-size: 14px; color: #ca8a04; margin-top: 4px; } /* Yellow */
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #1e3a8a; } /* Dark Blue */
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; transition: border-color 0.3s ease; background: white; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #eab308; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2); } /* Yellow */
+        
+        .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-bottom: 12px; }
+        .btn-primary { background: linear-gradient(135deg, #1e3a8a, #1e40af); color: white; } /* Dark Blue */
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(30, 58, 138, 0.3); }
+        .btn-secondary { background: #f1f5f9; color: #1e3a8a; border: 2px solid #e2e8f0; } /* Light Blue/Gray */
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-warning { background: #fef2f2; color: #991b1b; border: 2px solid #fecaca; } /* Maroon */
+        .btn-warning:hover { background: #fecaca; }
+        
+        .trip-item { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .trip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .trip-location { font-weight: 600; color: #1e3a8a; } /* Dark Blue */
+        .trip-date { font-size: 14px; color: #64748b; } /* Gray */
+        .trip-vehicle { font-size: 14px; color: #991b1b; margin-top: 4px; } /* Maroon */
+        .trip-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .trip-detail { text-align: center; padding: 8px; background: #f8fafc; border-radius: 8px; }
+        .trip-detail-value { font-weight: 600; color: #1e3a8a; } /* Dark Blue */
+        .trip-detail-label { font-size: 12px; color: #64748b; } /* Gray */
+        
+        .vehicle-item { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .vehicle-name { font-weight: 600; color: #1e3a8a; margin-bottom: 4px; } /* Dark Blue */
+        .vehicle-plate { font-family: monospace; font-size: 16px; color: #991b1b; margin-bottom: 8px; } /* Maroon */
+        .vehicle-default-badge { display: inline-block; padding: 4px 8px; background: #fef9c3; color: #854d0e; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px; } /* Yellow */
+        .vehicle-actions { display: flex; gap: 10px; }
+        
+        .nav-tabs { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; border-top: 1px solid #e2e8f0; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); }
+        .nav-tab { flex: 1; padding: 16px 8px; text-align: center; background: none; border: none; color: #64748b; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
+        .nav-tab.active { color: #1e3a8a; background: #f1f5f9; font-weight: 600; } /* Dark Blue */
+        
+        .view { display: none; }
+        .view.active { display: block; }
+        
+        .empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+        
+        .floating-add { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 16px rgba(234, 179, 8, 0.4); transition: transform 0.3s ease; z-index: 90; } /* Yellow */
+        .floating-add:hover { transform: scale(1.1); }
+        
+        .dev-credit { text-align: center; margin-top: 40px; font-size: 12px; color: #94a3b8; }
+        
+        @media (max-width: 480px) { .container { padding: 16px; } .card { padding: 20px; } .quick-stats { grid-template-columns: 1fr; gap: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Mileage Tracker</h1>
+        <div class="sync-status">🚗 Standalone & Offline</div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="view active">
+        <div class="container">
+            <div class="quick-stats">
+                <div class="stat-item"><div class="stat-value" id="totalKm">0</div><div class="stat-label">Total KM</div></div>
+                <div class="stat-item"><div class="stat-value" id="monthlyKm">0</div><div class="stat-label">This Month</div></div>
+                <div class="stat-item"><div class="stat-value" id="totalTrips">0</div><div class="stat-label">Trips</div></div>
+                <div class="stat-item"><div class="stat-value" id="monthlyTrips">0</div><div class="stat-label">Month Trips</div></div>
+            </div>
+            <div class="card">
+                <h2 style="margin-bottom: 16px; color: #1e3a8a;">Recent Trips</h2>
+                <div id="recentTrips">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🚗</div>
+                        <p>No trips recorded yet.<br>Tap + to add your first trip!</p>
+                    </div>
+                </div>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <!-- Add Trip View -->
+    <div id="addTripView" class="view">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 24px; color: #1e3a8a;">Add New Trip</h2>
+                <form id="tripForm">
+                    <!-- NEW VEHICLE SELECTOR -->
+                    <div class="form-group">
+                        <label for="vehicleSelect">Vehicle</label>
+                        <select id="vehicleSelect" required>
+                            <option value="">-- Select a Vehicle --</option>
+                            <!-- Options will be added by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group"><label for="location">Location</label><input type="text" id="location" placeholder="Enter destination" required></div>
+                    <div class="form-group"><label for="startKm">Starting KM</label><input type="number" id="startKm" placeholder="0" step="0.1" required></div>
+                    <div class="form-group"><label for="endKm">Ending KM</label><input type="number" id="endKm" placeholder="0" step="0.1" required></div>
+                    <!-- REMOVED TRIP TYPE -->
+                    <div class="form-group"><label for="notes">Notes (Optional)</label><textarea id="notes" rows="3" placeholder="Add any notes about this trip"></textarea></div>
+                    <button type="submit" class="btn btn-primary">Save Trip</button>
+                    <button type="button" class="btn btn-secondary" onclick="useLastEndKm()">Use Last End KM</button>
+                </form>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <!-- History View -->
+    <div id="historyView" class="view">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 16px; color: #1e3a8a;">Trip History</h2>
+                <div id="tripHistory">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <p>No trips in history yet.</p>
+                    </div>
+                </div>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <!-- NEW VEHICLES VIEW -->
+    <div id="vehiclesView" class="view">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 24px; color: #1e3a8a;">Manage Vehicles</h2>
+                <div id="vehiclesList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🚘</div>
+                        <p>No vehicles added yet.<br>Add your first vehicle below.</p>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="showAddVehicleForm()">+ Add New Vehicle</button>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <!-- NEW ADD VEHICLE FORM (Initially Hidden) -->
+    <div id="addVehicleView" class="view">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 24px; color: #1e3a8a;">Add New Vehicle</h2>
+                <form id="vehicleForm">
+                    <div class="form-group"><label for="vehicleName">Vehicle Nickname</label><input type="text" id="vehicleName" placeholder="e.g., My Car, Work Van" required></div>
+                    <div class="form-group"><label for="vehiclePlate">Number Plate</label><input type="text" id="vehiclePlate" placeholder="e.g., ABC 123" required></div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="vehicleDefault">
+                        <label for="vehicleDefault" style="margin-bottom: 0; font-weight: normal;">Set as default vehicle</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Vehicle</button>
+                    <button type="button" class="btn btn-secondary" onclick="showView('vehiclesView')">Cancel</button>
+                </form>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <!-- Settings View -->
+    <div id="settingsView" class="view">
+        <div class="container">
+            <div class="card">
+                <h2 style="margin-bottom: 24px; color: #1e3a8a;">Data Management</h2>
+                <button class="btn btn-secondary" onclick="exportData()">Export Data (CSV)</button>
+                <button class="btn btn-warning" onclick="clearAllData()">Clear All Data</button>
+            </div>
+            <p class="dev-credit">developed by Dave</p>
+        </div>
+    </div>
+
+    <button class="floating-add" onclick="showView('addTripView')">+</button>
+
+    <!-- Updated Navigation with VEHICLES tab -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showView('dashboardView')">Dashboard</button>
+        <button class="nav-tab" onclick="showView('addTripView')">Add Trip</button>
+        <button class="nav-tab" onclick="showView('historyView')">History</button>
+        <button class="nav-tab" onclick="showView('vehiclesView')">Vehicles</button> <!-- NEW TAB -->
+        <button class="nav-tab" onclick="showView('settingsView')">Settings</button>
+    </div>
+
+    <script>
+        // App State
+        let trips = JSON.parse(localStorage.getItem('mileageTrips') || '[]');
+        let vehicles = JSON.parse(localStorage.getItem('mileageVehicles') || '[]');
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboard();
+            updateHistory();
+            updateVehiclesList();
+            populateVehicleDropdown();
+            document.getElementById('tripForm').addEventListener('submit', handleTripSubmission);
+            document.getElementById('vehicleForm').addEventListener('submit', handleVehicleSubmission);
+        });
+
+        // Navigation
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            const tabs = ['dashboardView', 'addTripView', 'historyView', 'vehiclesView', 'addVehicleView', 'settingsView'];
+            const tabIndex = tabs.indexOf(viewId);
+            if (tabIndex !== -1 && tabIndex < 5) { // Only style the main nav tabs (first 5)
+                document.querySelectorAll('.nav-tab')[tabIndex].classList.add('active');
+            }
+        }
+        function showAddVehicleForm() { showView('addVehicleView'); }
+
+        // Trip Management
+        function handleTripSubmission(e) {
+            e.preventDefault();
+            const vehicleId = document.getElementById('vehicleSelect').value;
+            const location = document.getElementById('location').value.trim();
+            const startKm = parseFloat(document.getElementById('startKm').value);
+            const endKm = parseFloat(document.getElementById('endKm').value);
+            const notes = document.getElementById('notes').value.trim();
+            
+            if (!vehicleId) { alert('Please select a vehicle'); return; }
+            if (endKm <= startKm) { alert('Ending KM must be greater than starting KM'); return; }
+            
+            const trip = { id: Date.now(), vehicleId, location, startKm, endKm, distance: Math.round((endKm - startKm) * 10) / 10, notes, date: new Date().toISOString() };
+            trips.unshift(trip);
+            saveTrips();
+            updateDashboard();
+            updateHistory();
+            document.getElementById('tripForm').reset();
+            showView('dashboardView');
+            showNotification('Trip saved successfully!');
+        }
+
+        function useLastEndKm() {
+            if (trips.length > 0) { document.getElementById('startKm').value = trips[0].endKm; document.getElementById('startKm').focus(); } 
+            else { showNotification('No previous trips found'); }
+        }
+
+        // Vehicle Management
+        function handleVehicleSubmission(e) {
+            e.preventDefault();
+            const name = document.getElementById('vehicleName').value.trim();
+            const plate = document.getElementById('vehiclePlate').value.trim();
+            const isDefault = document.getElementById('vehicleDefault').checked;
+            
+            if (isDefault) { vehicles.forEach(v => v.isDefault = false); } // Clear previous default
+            const vehicle = { id: Date.now(), name, plate, isDefault };
+            vehicles.push(vehicle);
+            saveVehicles();
+            updateVehiclesList();
+            populateVehicleDropdown();
+            document.getElementById('vehicleForm').reset();
+            showView('vehiclesView');
+            showNotification('Vehicle saved successfully!');
+        }
+
+        function setDefaultVehicle(vehicleId) {
+            vehicles.forEach(vehicle => { vehicle.isDefault = (vehicle.id === vehicleId); });
+            saveVehicles();
+            updateVehiclesList();
+            populateVehicleDropdown();
+            showNotification('Default vehicle updated!');
+        }
+
+        function deleteVehicle(vehicleId) {
+            if (!confirm('Delete this vehicle? Trips linked to it will remain but show "Unknown Vehicle".')) return;
+            vehicles = vehicles.filter(v => v.id !== vehicleId);
+            saveVehicles();
+            updateVehiclesList();
+            populateVehicleDropdown();
+            showNotification('Vehicle deleted.');
+        }
+
+        function populateVehicleDropdown() {
+            const dropdown = document.getElementById('vehicleSelect');
+            dropdown.innerHTML = '<option value="">-- Select a Vehicle --</option>';
+            vehicles.forEach(vehicle => {
+                const option = document.createElement('option');
+                option.value = vehicle.id;
+                option.textContent = `${vehicle.name} (${vehicle.plate}) ${vehicle.isDefault ? '★' : ''}`;
+                if (vehicle.isDefault) { dropdown.value = vehicle.id; } // Auto-select default
+                dropdown.appendChild(option);
+            });
+        }
+
+        function updateVehiclesList() {
+            const container = document.getElementById('vehiclesList');
+            if (vehicles.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚘</div><p>No vehicles added yet.<br>Add your first vehicle below.</p></div>';
+                return;
+            }
+            container.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-item">
+                    ${vehicle.isDefault ? '<div class="vehicle-default-badge">★ Default Vehicle</div>' : ''}
+                    <div class="vehicle-name">${vehicle.name}</div>
+                    <div class="vehicle-plate">${vehicle.plate}</div>
+                    <div class="vehicle-actions">
+                        ${!vehicle.isDefault ? `<button class="btn-secondary" style="padding: 8px; font-size: 12px;" onclick="setDefaultVehicle(${vehicle.id})">Set Default</button>` : ''}
+                        <button class="btn-warning" style="padding: 8px; font-size: 12px;" onclick="deleteVehicle(${vehicle.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Data Management
+        function saveTrips() { localStorage.setItem('mileageTrips', JSON.stringify(trips)); }
+        function saveVehicles() { localStorage.setItem('mileageVehicles', JSON.stringify(vehicles)); }
+
+        // UI Updates
+        function updateDashboard() {
+            const totalKm = trips.reduce((sum, trip) => sum + trip.distance, 0);
+            const totalTrips = trips.length;
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthlyTrips = trips.filter(trip => { const tripDate = new Date(trip.date); return tripDate.getMonth() === currentMonth && tripDate.getFullYear() === currentYear; });
+            const monthlyKm = monthlyTrips.reduce((sum, trip) => sum + trip.distance, 0);
+            
+            document.getElementById('totalKm').textContent = Math.round(totalKm * 10) / 10;
+            document.getElementById('totalTrips').textContent = totalTrips;
+            document.getElementById('monthlyKm').textContent = Math.round(monthlyKm * 10) / 10;
+            document.getElementById('monthlyTrips').textContent = monthlyTrips.length;
+            
+            const recentTripsContainer = document.getElementById('recentTrips');
+            if (trips.length === 0) {
+                recentTripsContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚗</div><p>No trips recorded yet.<br>Tap + to add your first trip!</p></div>';
+                return;
+            }
+            const recentTrips = trips.slice(0, 3);
+            recentTripsContainer.innerHTML = recentTrips.map(trip => createTripElement(trip)).join('');
+        }
+
+        function updateHistory() {
+            const historyContainer = document.getElementById('tripHistory');
+            if (trips.length === 0) {
+                historyContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No trips in history yet.</p></div>';
+                return;
+            }
+            historyContainer.innerHTML = trips.map(trip => createTripElement(trip)).join('');
+        }
+
+        function createTripElement(trip) {
+            const date = new Date(trip.date).toLocaleDateString();
+            const time = new Date(trip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const vehicle = vehicles.find(v => v.id == trip.vehicleId) || { name: 'Unknown', plate: 'Vehicle' }; // Handle deleted vehicles
+            
+            return `<div class="trip-item">
+                <div class="trip-header"><div class="trip-location">${trip.location}</div><div class="trip-date">${date} ${time}</div></div>
+                <div class="trip-vehicle">🚗 ${vehicle.name} (${vehicle.plate})</div>
+                <div class="trip-details">
+                    <div class="trip-detail"><div class="trip-detail-value">${trip.startKm}</div><div class="trip-detail-label">Start KM</div></div>
+                    <div class="trip-detail"><div class="trip-detail-value">${trip.endKm}</div><div class="trip-detail-label">End KM</div></div>
+                    <div class="trip-detail"><div class="trip-detail-value">${trip.distance}</div><div class="trip-detail-label">Distance KM</div></div>
+                </div>
+                ${trip.notes ? `<div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 8px; font-size: 14px; color: #64748b;">${trip.notes}</div>` : ''}
+            </div>`;
+        }
+
+        function exportData() {
+            if (trips.length === 0) { showNotification('No trips to export'); return; }
+            const csvContent = "data:text/csv;charset=utf-8," + "Date,Time,Vehicle,Location,Start KM,End KM,Distance KM,Notes\n" + trips.map(trip => { 
+                const date = new Date(trip.date);
+                const vehicle = vehicles.find(v => v.id == trip.vehicleId) || { name: 'Unknown', plate: 'Vehicle' };
+                return `"${date.toLocaleDateString()}","${date.toLocaleTimeString()}","${vehicle.name} (${vehicle.plate})","${trip.location}",${trip.startKm},${trip.endKm},${trip.distance},"${trip.notes || ''}"`;
+            }).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", 'mileage_data_' + new Date().toISOString().split('T')[0] + '.csv'); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showNotification('📊 Data exported successfully!');
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear ALL trip and vehicle data? This cannot be undone.')) { 
+                trips = []; 
+                vehicles = [];
+                saveTrips();
+                saveVehicles();
+                updateDashboard();
+                updateHistory();
+                updateVehiclesList();
+                populateVehicleDropdown();
+                showNotification('🗑️ All data cleared'); 
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 80px; left: 50%; transform: translateX(-50%); background: #1e3a8a; color: white; padding: 12px 24px; border-radius: 8px; z-index: 1000; font-size: 14px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3); max-width: 90%; text-align: center;';
+            notification.textContent = message; document.body.appendChild(notification);
+            setTimeout(() => { notification.remove(); }, 3000);
+        }
+    </script>
+</body>
+</html>
